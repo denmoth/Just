@@ -1,0 +1,7 @@
+# Arch/CachyOS: system Python is PEP 668 — use pacman instead of pip:
+#   sudo pacman -S --needed python-pyqt6 python-pyqt6-webengine python-pyte
+# Optional: python-setproctitle — full argv in ps/htop as "just" (else Linux prctl, 15 chars)
+# Or: python -m venv .venv && .venv/bin/pip install -r requirements.txt
+PyQt6>=6.5
+PyQt6-WebEngine>=6.5
+pyte>=0.8.2

@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=org.kde.krunner
+# Install to ~/.local/share/dbus-1/services/
+# Use systemd user unit so KDE does not spawn a second python alongside just-runner.service.
+SystemdService=just-runner.service

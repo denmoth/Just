@@ -1,0 +1,14 @@
+[Unit]
+Description=Just launcher (KRunner-compatible D-Bus)
+After=graphical-session.target
+
+[Service]
+Type=simple
+TimeoutStopSec=15
+Environment=JUST_NO_SPAWN_INDEXER=1
+ExecStart=/usr/bin/python3 %h/Just/runner.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

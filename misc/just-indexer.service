@@ -1,0 +1,11 @@
+[Unit]
+Description=Just content indexer
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/Just/indexer.py --daemon
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target
