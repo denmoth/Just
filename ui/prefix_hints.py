@@ -6,7 +6,7 @@ from typing import Optional
 
 # Shown when input is empty (idle / defaults).
 IDLE_HINT = (
-    "Префиксы: .app · .file · .web · .погода · .timer · .конвертер · = · !g · > · ? · !!"
+    "Префиксы: .app · .file · .web · .погода · .timer · .media · .конвертер · = · !g · > · ? · !!"
 )
 
 _CAT_LABELS: dict[str, str] = {
@@ -28,6 +28,8 @@ _CAT_LABELS: dict[str, str] = {
     "конвертер": "валюта и единицы",
     "fx": "валюта и единицы",
     "kill": "завершение процессов",
+    "media": "медиа-клавиши (playerctl)",
+    "музыка": "медиа-клавиши (playerctl)",
 }
 
 

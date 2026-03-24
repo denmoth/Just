@@ -7,6 +7,7 @@ Usage:
   python3 runner.py --check          — validate all modules load, exit 0/1
   python3 runner.py --query "текст"  — run query headless, print results as JSON
   python3 runner.py --interactive    — REPL: type queries, see results in terminal
+  python3 runner.py --debug           — подробные логи (или --дебаг)
 """
 
 import sys
@@ -14,6 +15,7 @@ import os
 import signal
 import argparse
 import json
+import logging
 import time
 from pathlib import Path
 
@@ -35,8 +37,8 @@ def _cli_check():
     _prepare_qt_webengine_env()
     errors = []
     try:
-        from core.config import CFG, APP_NAME
-        print(f"[OK] core.config — {APP_NAME}")
+        from core.config import CFG, APP_NAME, VERSION
+        print(f"[OK] core.config — {APP_NAME} {VERSION}")
     except Exception as e:
         errors.append(f"core.config: {e}")
         print(f"[FAIL] core.config: {e}")
@@ -207,6 +209,8 @@ def main_gui():
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+    logging.getLogger("just").debug("Starting QApplication (Just GUI)")
+
     app = QApplication(sys.argv)
     app.setApplicationName("just")
     app.setApplicationDisplayName(APP_NAME)
@@ -315,21 +319,32 @@ def main_gui():
         def ActivateAction(self, action, parameter, platform_data):
             self._win.toggle()
 
-    adaptor = KRunnerAdaptor(window, window)
-    fd_adaptor = FreedesktopAdaptor(window, window)
-
-    from PyQt6.QtCore import QObject
-    proxy = QObject()
-    proxy.setParent(window)
-    KRunnerAdaptor(window, proxy)
-    FreedesktopAdaptor(window, proxy)
+    log = logging.getLogger("just")
+    KRunnerAdaptor(window, window)
+    FreedesktopAdaptor(window, window)
 
     bus = QDBusConnection.sessionBus()
-    if bus.registerService("org.kde.krunner"):
+    dbus_registered = bus.registerService("org.kde.krunner")
+    if dbus_registered:
+        # Same QObject on both paths: avoids duplicate adaptors and races on restart.
         bus.registerObject("/App", window)
-        bus.registerObject("/org/kde/krunner", proxy)
+        bus.registerObject("/org/kde/krunner", window)
+        log.debug("D-Bus: org.kde.krunner -> /App + /org/kde/krunner (single object)")
     else:
-        print("Warning: could not register org.kde.krunner D-Bus service", file=sys.stderr)
+        log.warning("Could not register org.kde.krunner — another instance may hold the name")
+
+    def _release_dbus():
+        if not dbus_registered:
+            return
+        try:
+            bus.unregisterObject("/App")
+            bus.unregisterObject("/org/kde/krunner")
+            bus.unregisterService("org.kde.krunner")
+            log.debug("D-Bus service released before quit")
+        except Exception:
+            log.debug("D-Bus release failed", exc_info=True)
+
+    app.aboutToQuit.connect(_release_dbus)
 
     def _on_conn():
         c = server.nextPendingConnection()
@@ -357,12 +372,25 @@ def main():
                "  runner.py --check              validate modules\n"
                "  runner.py --query 'firefox'    headless query\n"
                "  runner.py --interactive        REPL mode\n"
+               "  runner.py --debug              verbose logs (+ ~/.local/share/just/just-debug.log)\n"
                "  runner.py                      GUI (default)\n",
     )
     parser.add_argument("--check", action="store_true", help="Validate all modules load correctly")
     parser.add_argument("--query", "-q", type=str, help="Run a query headless, print JSON")
     parser.add_argument("--interactive", "-i", action="store_true", help="Interactive REPL mode")
+    parser.add_argument(
+        "--debug",
+        "--дебаг",
+        action="store_true",
+        help="Verbose logging to stderr and ~/.local/share/just/just-debug.log",
+    )
     args = parser.parse_args()
+
+    if args.debug:
+        os.environ["JUST_DEBUG"] = "1"
+    from core.logutil import setup_just_logging
+
+    setup_just_logging()
 
     if args.check:
         sys.exit(_cli_check())

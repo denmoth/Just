@@ -50,7 +50,7 @@ _RESULTS_LIST_SPACING = 2
 _WINDOW_INPUT_BLOCK_H = 76  # input 48 + prefix hint ~27 + separator 1
 _WINDOW_LIST_TAIL_PAD = 16
 
-_INSTANT_RUNNERS = {"CalcRunner", "ShellRunner", "WebRunner"}
+_INSTANT_RUNNERS = {"CalcRunner", "ShellRunner", "WebRunner", "MediaRunner"}
 
 PREFIX_TO_RUNNERS: dict[str, frozenset[str]] = {
     "app": frozenset({"AppRunner"}),
@@ -72,6 +72,8 @@ PREFIX_TO_RUNNERS: dict[str, frozenset[str]] = {
     "конвертер": frozenset({"ConverterRunner"}),
     "fx": frozenset({"ConverterRunner"}),
     "kill": frozenset({"KillRunner"}),
+    "media": frozenset({"MediaRunner"}),
+    "музыка": frozenset({"MediaRunner"}),
 }
 
 

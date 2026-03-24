@@ -14,6 +14,7 @@ SKIP_INDEXER_CHILD_ENV = "JUST_SKIP_INDEXER_SPAWN"
 NO_SPAWN_INDEXER_ENV = "JUST_NO_SPAWN_INDEXER"
 
 APP_NAME = "Just"
+VERSION = "1.0.0"
 SOCKET_NAME = "just-v2"
 
 home = Path.home()
@@ -138,7 +139,7 @@ CFG = load_config()
 
 def _api_get(url: str, timeout: float = 4.0) -> Optional[dict]:
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Just/2.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": f"Just/{VERSION}"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode())
     except Exception:

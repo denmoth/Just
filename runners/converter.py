@@ -5,7 +5,7 @@ import re
 import time
 import urllib.request
 
-from core.config import CACHE_DIR
+from core.config import CACHE_DIR, VERSION
 from core.search import SearchResult, EN_TO_RU, RU_TO_EN, _clipboard, switch_layout
 from runners.unit_convert import try_convert_units
 
@@ -29,7 +29,7 @@ def _load_rates() -> dict | None:
         try:
             req = urllib.request.Request(
                 url,
-                headers={"User-Agent": "Just/2.1"},
+                headers={"User-Agent": f"Just/{VERSION}"},
             )
             with urllib.request.urlopen(req, timeout=6) as resp:
                 data = json.loads(resp.read().decode())

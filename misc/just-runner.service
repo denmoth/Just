@@ -4,11 +4,14 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-TimeoutStopSec=15
+# Longer stop so Qt can quit, release D-Bus name, and close local socket before a new instance starts.
+TimeoutStopSec=45
+KillSignal=SIGTERM
 Environment=JUST_NO_SPAWN_INDEXER=1
+# Optional: Environment=JUST_DEBUG=1  or add --debug after runner.py for ~/.local/share/just/just-debug.log
 ExecStart=/usr/bin/python3 %h/Just/runner.py
 Restart=on-failure
-RestartSec=3
+RestartSec=5
 
 [Install]
 WantedBy=default.target

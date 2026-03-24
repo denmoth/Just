@@ -11,10 +11,13 @@ To add a new runner:
 """
 
 import importlib
+import logging
 import os
 import pkgutil
 import sys
 from pathlib import Path
+
+_LOG = logging.getLogger("just.runners")
 
 from core.plugins import discover_plugin_runners
 
@@ -40,7 +43,8 @@ def discover_runners(*, _reload: bool = False) -> list:
         try:
             mod = importlib.import_module(f"runners.{module_name}")
         except Exception as e:
-            print(f"[runners] Failed to load {module_name}: {e}", file=sys.stderr)
+            _LOG.warning("Failed to load runners.%s: %s", module_name, e)
+            _LOG.debug("runners.%s import traceback", module_name, exc_info=True)
             continue
 
         if hasattr(mod, "get_runners"):
