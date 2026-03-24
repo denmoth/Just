@@ -18,6 +18,7 @@ from PyQt6.QtGui import (
 )
 
 from core.config import MAX_RESULTS, WINDOW_WIDTH, CORNER_RADIUS, ITEM_HEIGHT, home
+from core.nl import normalize_for_runners
 from core.last_repeat import load_last_repeat, save_last_repeat_if_eligible
 from runners.weather import WeatherRunner
 from runners.resource_snapshot import idle_resource_result
@@ -47,7 +48,6 @@ INPUT_DEBOUNCE_MS = 220
 # Must match results_layout margins (4+4) and setSpacing(2).
 _RESULTS_LIST_MARGIN_V = 8
 _RESULTS_LIST_SPACING = 2
-_WINDOW_INPUT_BLOCK_H = 76  # input 48 + prefix hint ~27 + separator 1
 _WINDOW_LIST_TAIL_PAD = 16
 
 _INSTANT_RUNNERS = {"CalcRunner", "ShellRunner", "WebRunner", "MediaRunner"}
@@ -312,8 +312,23 @@ class JustWindow(QWidget):
             p.drawText(14, 30, "🔍")
         p.end()
 
+    def _input_block_height(self) -> int:
+        h = self.search_input.minimumHeight()
+        if self.prefix_hint_label.isVisible() and self.prefix_hint_label.text().strip():
+            h += self.prefix_hint_label.sizeHint().height()
+        h += 1
+        return h
+
     def _update_prefix_hint(self, query: str) -> None:
-        self.prefix_hint_label.setText(prefix_hint(query, self._cat_filt))
+        t = prefix_hint(query, self._cat_filt)
+        self.prefix_hint_label.setText(t)
+        self.prefix_hint_label.setVisible(bool(t.strip()))
+        self._layout_height_timer.start(0)
+
+    def _effective_query(self, query: str, filt: Optional[str], body: str) -> str:
+        if filt:
+            return adapt_query_for_prefix(filt, normalize_for_runners(body))
+        return normalize_for_runners(query)
 
     def _fill_repeat_results(self) -> None:
         last = load_last_repeat()
@@ -380,7 +395,7 @@ class JustWindow(QWidget):
         body, filt = parse_category_prefix(query)
         self._cat_filt = filt
         self._update_prefix_hint(query)
-        eff = adapt_query_for_prefix(filt, body) if filt else query
+        eff = self._effective_query(query, filt, body)
 
         if query == "!!":
             self._input_timer.stop()
@@ -441,7 +456,7 @@ class JustWindow(QWidget):
         if not query or query.startswith(("?", ">", "$")):
             return
         body, filt = parse_category_prefix(query)
-        eff = adapt_query_for_prefix(filt, body) if filt else query
+        eff = self._effective_query(query, filt, body)
         gen = self._heavy_gen
 
         def _work():
@@ -592,7 +607,7 @@ class JustWindow(QWidget):
         hint_h = self.results_widget.minimumSizeHint().height()
         content_h = max(hint_h, self._nominal_list_content_height())
         self.setFixedHeight(
-            _WINDOW_INPUT_BLOCK_H + content_h + _WINDOW_LIST_TAIL_PAD,
+            self._input_block_height() + content_h + _WINDOW_LIST_TAIL_PAD,
         )
 
     def _render(self):

@@ -1,12 +1,11 @@
-"""One-line hint under the search field for the active prefix / mode."""
+"""One-line hint under the search field (only when relevant: text, “.”, or “!”)."""
 
 from __future__ import annotations
 
 from typing import Optional
 
-# Shown when input is empty (idle / defaults).
-IDLE_HINT = (
-    "Префиксы: .app · .file · .web · .погода · .timer · .media · .конвертер · = · !g · > · ? · !!"
+_PREFIX_CHEATSHEET = (
+    "Префикс: .app · .file · .web · .погода · .timer · .media · .конвертер"
 )
 
 _CAT_LABELS: dict[str, str] = {
@@ -32,6 +31,8 @@ _CAT_LABELS: dict[str, str] = {
     "музыка": "медиа-клавиши (playerctl)",
 }
 
+_BANG_SHORT = "!бэнг: !g поиск · !w вики · !yt YouTube — пробел и запрос"
+
 
 def prefix_hint(raw: str, cat_filt: Optional[str]) -> str:
     s = (raw or "").strip()
@@ -42,10 +43,28 @@ def prefix_hint(raw: str, cat_filt: Optional[str]) -> str:
         return f".{cat_filt} — режим: {what}"
 
     if not s:
-        return IDLE_HINT
+        return ""
 
     if low == "!!" or low.startswith("!! "):
         return "!! — повторить последнюю успешную команду (не сохраняются строки с > или $)"
+
+    if s.startswith(".") and " " not in s:
+        tail = s[1:].lower()
+        if not tail:
+            return _PREFIX_CHEATSHEET
+        if tail in _CAT_LABELS:
+            return f"{s} — {_CAT_LABELS[tail]} · пробел и запрос"
+        return f"{s} — неизвестный префикс · примеры: .app .file .web"
+
+    if s.startswith("!") and not s.startswith("!!"):
+        if s.startswith("!g ") or s.startswith("!g\t"):
+            return "!g — открыть поиск Google в браузере"
+        if s.startswith("!w ") or s.startswith("!yt "):
+            return "!w — Википедия · !yt — YouTube · !g — Google (см. !gh !tr !ya …)"
+        if " " not in s:
+            if s == "!":
+                return _BANG_SHORT
+            return f"{s} — пробел и запрос (!g …, !w …, !yt …)"
 
     if s.startswith(">"):
         return "> — команда shell: Enter — внешний терминал · Ctrl+Space — превью PTY (bash)"
@@ -55,12 +74,6 @@ def prefix_hint(raw: str, cat_filt: Optional[str]) -> str:
 
     if s.startswith("="):
         return "= — калькулятор (дроби, sin, sqrt…); Tab — часто выполняет первый результат"
-
-    if s.startswith("!g ") or s.startswith("!g\t"):
-        return "!g — открыть поиск Google в браузере"
-
-    if s.startswith("!w ") or s.startswith("!yt "):
-        return "!w — Википедия · !yt — YouTube · !g — Google (см. !gh !tr !ya …)"
 
     if s.startswith("?"):
         return "? — запрос к AI (нужен ключ в конфиге)"
@@ -80,7 +93,6 @@ def prefix_hint(raw: str, cat_filt: Optional[str]) -> str:
     if low.startswith("таймер") or low.startswith("timer"):
         return "Таймер: «5 мин», «1ч 20м», «90 сек» или будильник «14:30 чай»"
 
-    # Loose hints for natural converter phrasing
     if any(
         x in low
         for x in (
@@ -108,4 +120,4 @@ def prefix_hint(raw: str, cat_filt: Optional[str]) -> str:
             return "Валюта: «100 usd в rub» · «50 € в руб»"
         return "Единицы: «5 миль в км» · «180 см в футы» · «25 c в f» · «2 л в мл»"
 
-    return IDLE_HINT
+    return ""

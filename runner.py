@@ -7,7 +7,7 @@ Usage:
   python3 runner.py --check          — validate all modules load, exit 0/1
   python3 runner.py --query "текст"  — run query headless, print results as JSON
   python3 runner.py --interactive    — REPL: type queries, see results in terminal
-  python3 runner.py --debug           — подробные логи (или --дебаг)
+  python3 runner.py --debug           — verbose logs
 """
 
 import sys
@@ -96,15 +96,17 @@ def _cli_check():
 def _cli_query(query: str):
     """Run a query headless, print JSON results."""
     os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    from core.nl import normalize_for_runners
     from runners import discover_runners
     runners = discover_runners()
+    nq = normalize_for_runners(query)
 
     results = []
     for runner in runners:
         if getattr(runner, "is_ai", False):
             continue
         try:
-            results.extend(runner.match(query))
+            results.extend(runner.match(nq))
         except Exception as e:
             print(f"[WARN] {type(runner).__name__}: {e}", file=sys.stderr)
 
@@ -133,6 +135,7 @@ def _cli_query(query: str):
 def _cli_interactive():
     """REPL mode: type queries, see results in terminal."""
     os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    from core.nl import normalize_for_runners
     from runners import discover_runners
     runners = discover_runners()
     names = [type(r).__name__ for r in runners]
@@ -148,12 +151,13 @@ def _cli_interactive():
         if not query:
             continue
 
+        nq = normalize_for_runners(query)
         results = []
         for runner in runners:
             if getattr(runner, "is_ai", False):
                 continue
             try:
-                results.extend(runner.match(query))
+                results.extend(runner.match(nq))
             except Exception as e:
                 print(f"  [ERR] {type(runner).__name__}: {e}")
 
@@ -380,7 +384,6 @@ def main():
     parser.add_argument("--interactive", "-i", action="store_true", help="Interactive REPL mode")
     parser.add_argument(
         "--debug",
-        "--дебаг",
         action="store_true",
         help="Verbose logging to stderr and ~/.local/share/just/just-debug.log",
     )

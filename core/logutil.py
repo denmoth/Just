@@ -1,4 +1,4 @@
-"""Debug logging: --debug / --дебаг or env JUST_DEBUG=1."""
+"""Debug logging: --debug or env JUST_DEBUG=1."""
 
 from __future__ import annotations
 
